@@ -10,14 +10,22 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log("Received email:", email); // Debugging log
 
-    if (!email) throw new Error("Please provide an email");
+    if (!email) {
+      throw new Error("Please provide an email");
+    }
 
-    if (!validateEmail(email)) throw new Error("Please provide a valid email");
+    if (!validateEmail(email)) {
+      throw new Error("Please provide a valid email");
+    }
 
     const subRes = await fetch(
       `https://api.convertkit.com/v3/subscribers?api_secret=${import.meta.env.CONVERT_KIT_SECRET_KEY}&email_address=${email}`
     );
-    if (!subRes.ok) throw new Error("Big Yikes!");
+
+    if (!subRes.ok) {
+      console.error("ConvertKit subscription check failed:", subRes.statusText);
+      throw new Error("Error checking subscription status");
+    }
 
     const subData = await subRes.json();
     const isSubscribed = subData.total_subscribers > 0;
@@ -35,15 +43,27 @@ export const POST: APIRoute = async ({ request }) => {
       }),
     });
 
-    if (!res.ok) throw new Error("Subscribing failed");
+    if (!res.ok) {
+      console.error("ConvertKit subscription failed:", res.statusText);
+      throw new Error("Subscribing failed");
+    }
 
     const resText = await res.json();
-    if (resText.error) throw new Error(resText.error.message);
+    if (resText.error) {
+      console.error("ConvertKit API returned an error:", resText.error.message);
+      throw new Error(resText.error.message);
+    }
 
     return new Response(JSON.stringify({ message: "👀 Thanks! Please check your email to confirm your subscription." }), { status: 200 });
 
   } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    return new Response(JSON.stringify({ message: error instanceof Error ? error.message : "There is an unexpected error" }), { status: 400 });
+    let errorMessage = "There is an unexpected error";
+    if (error instanceof Error) {
+      console.error("Error processing subscription request:", error.message);
+      errorMessage = error.message;
+    } else {
+      console.error("Unknown error:", error);
+    }
+    return new Response(JSON.stringify({ message: errorMessage }), { status: 400 });
   }
 };

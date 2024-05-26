@@ -44,7 +44,7 @@ const SubscribeForm = () => {
       formRef.current?.reset();
     } catch (error) {
       toast.error("There was a problem subscribing you. Please try again.", { id: subToast });
-      console.error(error);
+      console.error("Subscription error:", error);
     } finally {
       setIsSubmitting(false);
     }
