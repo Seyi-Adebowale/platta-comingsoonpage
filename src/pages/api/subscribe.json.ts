@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // subscribe email
     const res = await fetch(
-      "https://api.convertkit.com/v3/forms/6137867/subscribe",
+      "https://api.convertkit.com/v3/forms/920122/subscribe",
       {
         method: "POST",
         headers: {
