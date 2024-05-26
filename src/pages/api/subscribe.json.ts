@@ -5,10 +5,17 @@ import validateEmail from "../../lib/validateEmail";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json();
-    const { email } = body;
+    // Log the incoming request method and headers for debugging
+    console.log("Received request:", {
+      method: request.method,
+      headers: request.headers,
+    });
 
-    console.log("Received email:", email); // Debugging log
+    const body = await request.json();
+    console.log("Received body:", body); // Log the request body for debugging
+
+    const { email } = body;
+    console.log("Extracted email:", email); // Log the extracted email
 
     if (!email) {
       throw new Error("Please provide an email");
@@ -18,6 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
       throw new Error("Please provide a valid email");
     }
 
+    // Check if the email is already subscribed
     const subRes = await fetch(
       `https://api.convertkit.com/v3/subscribers?api_secret=${import.meta.env.CONVERT_KIT_SECRET_KEY}&email_address=${email}`
     );
@@ -28,12 +36,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const subData = await subRes.json();
+    console.log("Subscription check response data:", subData); // Log the response data
+
     const isSubscribed = subData.total_subscribers > 0;
 
     if (isSubscribed) {
       return new Response(JSON.stringify({ message: "🥳 You’re already subscribed!" }), { status: 200 });
     }
 
+    // Subscribe email
     const res = await fetch("https://api.convertkit.com/v3/forms/920122/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -49,6 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const resText = await res.json();
+    console.log("Subscription response data:", resText); // Log the subscription response data
+
     if (resText.error) {
       console.error("ConvertKit API returned an error:", resText.error.message);
       throw new Error(resText.error.message);
