@@ -90,10 +90,4 @@ export const POST: APIRoute = async ({ request }) => {
       statusText: "There is an unexpected error",
     });
   }
-
-  return new Response(
-    JSON.stringify({
-      message: "This was a POST!",
-    })
-  );
 };
