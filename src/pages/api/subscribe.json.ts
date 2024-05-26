@@ -8,92 +8,42 @@ export const POST: APIRoute = async ({ request }) => {
     const body = await request.json();
     const { email } = body;
 
-    // check that email exists
-    if (!email) {
-      throw new Error("Please provide an email");
-    }
+    console.log("Received email:", email); // Debugging log
 
-    // validate email
-    if (!validateEmail(email as string)) {
-      throw new Error("Please provide an email");
-    }
+    if (!email) throw new Error("Please provide an email");
 
-    // check if the email is already subscribed
+    if (!validateEmail(email)) throw new Error("Please provide a valid email");
+
     const subRes = await fetch(
-      `https://api.convertkit.com/v3/subscribers?api_secret=${
-        import.meta.env.CONVERT_KIT_SECRET_KEY
-      }&email_address=${email}`
+      `https://api.convertkit.com/v3/subscribers?api_secret=${import.meta.env.CONVERT_KIT_SECRET_KEY}&email_address=${email}`
     );
-    if (!subRes.ok) {
-      throw new Error("Big Yikes!");
-    }
+    if (!subRes.ok) throw new Error("Big Yikes!");
+
     const subData = await subRes.json();
     const isSubscribed = subData.total_subscribers > 0;
 
     if (isSubscribed) {
-      return new Response(
-        JSON.stringify({
-          message: "🥳 You’re already subscribed!",
-        }),
-        {
-          status: 200,
-          statusText: "OK",
-        }
-      );
+      return new Response(JSON.stringify({ message: "🥳 You’re already subscribed!" }), { status: 200 });
     }
 
-    // subscribe email
-    const res = await fetch(
-      "https://api.convertkit.com/v3/forms/920122/subscribe",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-        },
-        body: JSON.stringify({
-          api_key: import.meta.env.CONVERT_KIT_API_KEY,
-          email,
-        }),
-      }
-    );
+    const res = await fetch("https://api.convertkit.com/v3/forms/920122/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({
+        api_key: import.meta.env.CONVERT_KIT_API_KEY,
+        email,
+      }),
+    });
 
-    if (!res.ok) {
-      throw new Error("Subscribing failed");
-    }
+    if (!res.ok) throw new Error("Subscribing failed");
 
     const resText = await res.json();
+    if (resText.error) throw new Error(resText.error.message);
 
-    if (resText.error) {
-      throw new Error(resText.error.message);
-    }
+    return new Response(JSON.stringify({ message: "👀 Thanks! Please check your email to confirm your subscription." }), { status: 200 });
 
-    return new Response(
-      JSON.stringify({
-        message:
-          "👀 Thanks! Please check your email to confirm your subscription.",
-      }),
-      {
-        status: 200,
-        statusText: "OK",
-      }
-    );
-  } catch (e) {
-    if (e instanceof Error) {
-      console.log(e.message);
-      return new Response(null, {
-        status: 400,
-        statusText: e.message,
-      });
-    }
-    return new Response(null, {
-      status: 400,
-      statusText: "There is an unexpected error",
-    });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    return new Response(JSON.stringify({ message: error instanceof Error ? error.message : "There is an unexpected error" }), { status: 400 });
   }
-
-  return new Response(
-    JSON.stringify({
-      message: "This was a POST!",
-    })
-  );
 };
