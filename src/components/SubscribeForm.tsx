@@ -33,7 +33,7 @@ const SubscribeForm = () => {
     }
 
     try {
-      const res = await fetch("src/pages/api/subscribe.json", {
+      const res = await fetch("/api/subscribe.json", {
         method: "POST",
         body: JSON.stringify(formInputs),
         headers: {
